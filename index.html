@@ -13,6 +13,7 @@
             <input type="text" id="city-input" placeholder="Search city...">
             <button id="search-btn"><i class="fas fa-search"></i></button>
             <button id="location-btn"><i class="fas fa-location-arrow"></i></button>
+            <button id="theme-btn"><i class="fas fa-moon"></i></button>
         </div>
 
         <div class="weather-display">
@@ -20,7 +21,14 @@
                 <div class="weather-main">
                     <div class="location" id="location">South Africa, Durban</div>
                     <div class="date" id="date">Friday, October 17</div>
-                    <div class="temperature" id="temp">26&deg;C</div>
+                    <div class="temp-container">
+                        <div class="temperature" id="temp">26&deg;C</div>
+                        <div class="unit-toggle">
+                            <span class="unit active">&deg;C</span>
+                            <span class="unit-separator">/</span>
+                            <span class="unit">&deg;F</span>
+                        </div>
+                    </div>
                     <div class="condition" id="condition">Sunny</div>
                 </div>
                 <div class="weather-icon">

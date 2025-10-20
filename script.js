@@ -1,6 +1,9 @@
 const API_KEY = "8f7f7061dac6a2db687723a8e54765c8"
 const BASE_URL = "https://api.openweathermap.org/data/2.5"
+const STORAGE_KEY = "weatherAppLastCity";
+const THEME_KEY = "weatherAppTheme";
 
+let currentUnit = 'metric'; // 'metric' for Celsius, 'imperial' for Fahrenheit
 const cityInput = document.getElementById("city-input");
 const searchBtn = document.getElementById("search-btn");
 const locationBtn = document.getElementById("location-btn");
@@ -14,9 +17,26 @@ const humidityElement = document.getElementById("humidity");
 const windElement = document.getElementById("wind");
 // const forecastElement = document.getElementById("forecast"); // Forecast HTML is not yet in index.html
 const forecastElement = document.getElementById("forecast");
+const unitToggleElement = document.querySelector('.unit-toggle');
+const themeBtn = document.getElementById("theme-btn");
 
 document.addEventListener("DOMContentLoaded", () => {
-    getLocationWeather();
+    // Load last theme
+    const savedTheme = localStorage.getItem(THEME_KEY);
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+
+    // Load last city or use geolocation
+    const lastCity = localStorage.getItem(STORAGE_KEY);
+    if (lastCity) {
+        getWeatherByCity(lastCity);
+    } else {
+        getLocationWeather();
+    }
+
+    
 });
 
 searchBtn.addEventListener("click", () => {
@@ -34,6 +54,36 @@ cityInput.addEventListener("keypress", (e) => {
         if (city) {
             getWeatherByCity(city);
         }
+    }
+});
+
+unitToggleElement.addEventListener('click', (e) => {
+    if (e.target.classList.contains('unit')) {
+        const selectedUnit = e.target.textContent.includes('C') ? 'metric' : 'imperial';
+        if (selectedUnit !== currentUnit) {
+            currentUnit = selectedUnit;
+            // Re-fetch weather for the last known city with the new unit
+            const lastCity = localStorage.getItem(STORAGE_KEY);
+            if (lastCity) {
+                getWeatherByCity(lastCity);
+            }
+            // Update active class on toggle
+            unitToggleElement.querySelectorAll('.unit').forEach(el => el.classList.remove('active'));
+            e.target.classList.add('active');
+        }
+    }
+});
+
+themeBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-theme');
+    const isDarkMode = document.body.classList.contains('dark-theme');
+    
+    if (isDarkMode) {
+        themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem(THEME_KEY, 'dark');
+    } else {
+        themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem(THEME_KEY, 'light');
     }
 });
 
@@ -62,18 +112,28 @@ function updateDateTime() {
 async function getWeatherByCity(city) {
     showLoading();
     try {
-        const currentResponse = await fetch(`${BASE_URL}/weather?q=${city}&units=metric&appid=${API_KEY}`);
+        const currentResponse = await fetch(`${BASE_URL}/weather?q=${city}&units=${currentUnit}&appid=${API_KEY}`);
         const currentData = await currentResponse.json();
 
+        // Handle API errors, like city not found (cod: "404")
         if (currentData.cod !== 200) {
-            throw new Error(currentData.message);
+            if (currentData.cod === "404") {
+                alert(`Error: City "${city}" not found. Please check the spelling and try again.`);
+            } else {
+                alert(`Error: ${currentData.message}`);
+            }
+            hideLoading();
+            cityInput.value = "";
+            cityInput.focus();
+            return; // Stop the function if there's an error
         }
-        const forecastResponse = await fetch(`${BASE_URL}/forecast?q=${city}&units=metric&appid=${API_KEY}`);
+
+        const forecastResponse = await fetch(`${BASE_URL}/forecast?q=${city}&units=${currentUnit}&appid=${API_KEY}`);
         const forecastData = await forecastResponse.json();
 
         updateWeatherUI(currentData, forecastData);
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`An unexpected error occurred: ${error.message}`);
         hideLoading();
     }
 }    
@@ -83,10 +143,10 @@ async function getLocationWeather(){
         navigator.geolocation.getCurrentPosition(async(position) =>{
             const { latitude, longitude } = position.coords;
             try {
-                const currentResponse = await fetch(`${BASE_URL}/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`);
+                const currentResponse = await fetch(`${BASE_URL}/weather?lat=${latitude}&lon=${longitude}&units=${currentUnit}&appid=${API_KEY}`);
                 const currentData = await currentResponse.json();
 
-                const forecastResponse = await fetch(`${BASE_URL}/forecast?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`);
+                const forecastResponse = await fetch(`${BASE_URL}/forecast?lat=${latitude}&lon=${longitude}&units=${currentUnit}&appid=${API_KEY}`);
                 const forecastData = await forecastResponse.json();
 
                 updateWeatherUI(currentData, forecastData);
@@ -106,17 +166,24 @@ async function getLocationWeather(){
 }
 
 function updateWeatherUI(currentData, forecastData) {
+    const tempUnit = currentUnit === 'metric' ? '&deg;C' : '&deg;F';
+    const windUnit = currentUnit === 'metric' ? 'km/h' : 'mph';
+    // API gives m/s for metric, so we convert to km/h. It gives mph for imperial.
+    const windSpeed = currentUnit === 'metric' ? Math.round(currentData.wind.speed * 3.6) : Math.round(currentData.wind.speed);
+
     locationElement.textContent = `${currentData.name}, ${currentData.sys.country}`;
-    tempElement.innerHTML = `${Math.round(currentData.main.temp)}&deg;C`;
+    tempElement.innerHTML = `${Math.round(currentData.main.temp)}${tempUnit}`;
     conditionElement.textContent = currentData.weather[0].main;
     weatherIconElement.src = `https://openweathermap.org/img/wn/${currentData.weather[0].icon}@2x.png`;
     weatherIconElement.alt = currentData.weather[0].description;
 
     // The HTML file uses spans inside divs with a class of 'detail'. The innerHTML needs to be set on the span.
-    document.querySelector("#feels-like").innerHTML = `Feels like: ${Math.round(currentData.main.feels_like)}&deg;C`;
+    document.querySelector("#feels-like").innerHTML = `Feels like: ${Math.round(currentData.main.feels_like)}${tempUnit}`;
     document.querySelector("#humidity").innerHTML = `Humidity: ${currentData.main.humidity}%`;
-    // OpenWeatherMap wind speed is in meter/sec by default with units=metric. To get km/h, multiply by 3.6.
-    document.querySelector("#wind").innerHTML = `Wind: ${Math.round(currentData.wind.speed * 3.6)} km/h`;
+    document.querySelector("#wind").innerHTML = `Wind: ${windSpeed} ${windUnit}`;
+
+    // Save the successfully fetched city to local storage
+    localStorage.setItem(STORAGE_KEY, currentData.name);
 
     updateDateTime();
     updateForecast(forecastData);
