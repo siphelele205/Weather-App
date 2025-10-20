@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="weather-app">
+        <div class="search-container">
+            <input type="text" id="city-input" placeholder="Search city...">
+            <button id="search-btn"><i class="fas fa-search"></i></button>
+            <button id="location-btn"><i class="fas fa-location-arrow"></i></button>
+        </div>
+
+        <div class="weather-display">
+            <div class="current-weather">
+                <div class="weather-main">
+                    <div class="location" id="location">South Africa, Durban</div>
+                    <div class="date" id="date">Friday, October 17</div>
+                    <div class="temperature" id="temp">26&deg;C</div>
+                    <div class="condition" id="condition">Sunny</div>
+                </div>
+                <div class="weather-icon">
+                    <img src="" alt="Weather Icon" id="weather-icon">
+                </div>
+            </div>
+        </div>
+
+        <div class="weather-details">
+            <div class="detail">
+                <i class="fas fa-temperature-low"></i>
+                <span id="feels-like">Feels like: 25&deg;C</span>
+            </div>
+            <div class="detail">
+                <i class="fas fa-wind"></i>
+                <span id="wind">Wind: 5 km/h</span>
+            </div>
+            <div class="detail">
+                    <i class="fas fa-tint"></i>
+                    <span id="humidity">Humidity: 50%</span>
+            </div>
+        </div>
+
+        <div class="forecast-container">
+            <div class="forecast" id="forecast"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="loader"></div>
+            <p>Loading weather data...</p>
+        </div>
+            </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
